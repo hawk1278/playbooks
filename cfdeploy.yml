@@ -1,0 +1,23 @@
+- name: Provision stack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+  - name: launch ansible cloudformation example
+    cloudformation:
+      stack_name: "ansible-cloudformation"
+      state: "present"
+      region: "us-east-1"
+      disable_rollback: true
+      template: "../files/mytemplate.template"
+      template_parameters:
+        KeyName: "myec2key"
+        InstanceType: "t2.micro"
+        Environment: "DEV"
+        SecurityGroup: "sg-2b01a557"
+        Subnet: "subnet-1125613c,subnet-1025613d"
+      tags:
+        Stack: "ansible-cloudformation"
+    
+  

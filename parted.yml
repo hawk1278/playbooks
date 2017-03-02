@@ -1,0 +1,11 @@
+---
+- hosts: web
+  become: true
+  roles: 
+  - parted
+  vars:
+  - hdds:
+    - /dev/xvdc
+    - /dev/xvdd
+  - partitions:
+    - {'partition_type':'primary','start_point':'0%','end_point':'100%'}
