@@ -1,0 +1,29 @@
+---
+- name: Install and configure Teleport SSH service
+  hosts: all
+  become: true
+  gather_facts: true
+  strategy: debug
+  vars:
+  - auth_servers: ""
+  - proxy_node_name: "{{ ansible_hostname }}"
+  roles:
+  - role: teleport 
+    vars: 
+    - teleport_config: |
+        teleport:
+          nodename: "{{ proxy_node_name }}"
+          auth_token: hello
+          auth_servers:
+          - "{{ auth_servers }}"
+          data_dir: /var/lib/teleport
+        proxy_service:
+          enabled: "yes"
+          listen_addr: 0.0.0.0:3023
+          web_listen_addr: 0.0.0.0:3080
+        auth_service:
+          enabled: "no"
+        ssh_service:
+          enabled: "no"
+          
+          

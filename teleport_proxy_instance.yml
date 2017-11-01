@@ -1,0 +1,74 @@
+---
+- name: Create a Teleport SSH auth server instance
+  hosts: localhost
+  gather_facts: False
+  become: False
+  vars:
+    key_name: 18sep2017
+    instance_type: m3.medium
+    sg: ["sg-0645c375","sg-232cac50","sg-8130b0f2","sg-c870f3bb"]
+    image: ami-4fffc834
+    region: us-east-1
+    instance_name: proxy_test   
+    app: gopher
+    backup: true 
+    auth_servers: ""
+    node_name: "{{ ansible_hostname }}"
+
+  tasks:
+    - name: Launch instance
+      ec2:
+         key_name: "{{ key_name }}"
+         group_id: "{{ sg }}"
+         instance_type: "{{ instance_type }}"
+         image: "{{ image }}"
+         wait: true
+         region: "{{ region }}"
+         vpc_subnet_id: subnet-5afc9001
+         assign_public_ip: yes
+         instance_tags:
+             Backup: "{{ backup }}"
+             Name: "{{ instance_name }}"
+             Application: "{{ app }}"      
+      register: ec2
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: launched
+      with_items: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 60
+        timeout: 300
+        state: started
+      with_items: "{{ ec2.instances }}"
+
+- name: Configure instance(s)
+  hosts: launched
+  become: True
+  gather_facts: True
+  roles:
+  - role: teleport 
+    vars: 
+    - teleport_config: |
+        teleport:
+          nodename: "{{ ansible_hostname }}"
+          auth_token: hello
+          auth_servers:
+          - "{{ auth_servers}}"
+          data_dir: /var/lib/teleport
+          log:
+              output: syslog
+              severity: INFO
+        proxy_service:
+          enabled: "yes"
+          listen_addr: 0.0.0.0:3023
+          web_listen_addr: 0.0.0.0:3080
+        auth_service:
+          enabled: "no"
+        ssh_service:
+          enabled: "no"
