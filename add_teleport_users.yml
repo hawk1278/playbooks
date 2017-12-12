@@ -1,0 +1,11 @@
+---
+- name: Create teleport users
+  hosts: all
+  gather_facts: true
+  become: true
+  vars:
+    web_user_name: rich
+    local_user_names: "rich,root"
+  tasks:
+  - name: Create Teleport users
+    command: /usr/local/bin/tctl users add "{{ web_user_name }}" "{{ local_user_names }}"

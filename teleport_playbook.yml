@@ -1,0 +1,43 @@
+---
+- name: Install and configure Teleport SSH service
+  hosts: all
+  become: true
+  gather_facts: true
+
+  - name: Configure instance(s)
+  hosts: launched
+  become: True
+  gather_facts: True
+  roles:
+  - role: teleport 
+    vars: 
+    - teleport_config: |
+          teleport:
+            nodename: 
+            data_dir: /var/lib/teleport
+            log:
+              output: syslog
+              severity: INFO
+            storage:
+              type: dynamodb
+              region: us-east-1
+              table_name: teleport.state
+              access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+              secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+            advertise_ip: "{{ ansible_host }}"
+            auth_token: hello
+          auth_service: 
+            cluster_name: tele-test
+            enabled: yes
+            listen_addr: 0.0.0.0:3025
+            tokens:
+              - 'proxy,node:hello'
+            authentication:
+              type: local
+              second_factor: off
+          ssh_service:
+            enabled: no
+          proxy_service:
+            enabled: no
+  
+  
