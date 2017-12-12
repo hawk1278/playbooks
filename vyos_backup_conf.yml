@@ -1,0 +1,12 @@
+---
+- name: Testing Vyos module with Ansible
+  hosts: all
+  gather_facts: no
+  become: false
+  connection: local
+  tasks:
+  - name: Backup config
+    vyos_config:
+        backup: yes
+      
+

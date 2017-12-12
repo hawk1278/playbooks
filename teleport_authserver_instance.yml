@@ -1,6 +1,7 @@
 ---
 - name: Create a Teleport SSH auth server instance
   hosts: localhost
+  connection: local
   gather_facts: False
   become: False
   vars:
@@ -9,15 +10,18 @@
     sg: ["sg-0645c375","sg-232cac50"]
     image: ami-4fffc834
     region: us-east-1
-    instance_name: auth_test   
+    instance_name: teleport_auth2_1a_12dec2017
     app: gopher
     backup: true 
-    node_name: "{{ ansible_hostname }}"
-    table_name: teleport.state
-    token: hello
-    cluster: main
-    
-
+#    node_name: "{{ ansible_hostname }}"
+#    token: hello
+#    cluster: main
+    env: dev
+    start_stop: "1000;2000"
+    poc: "firstname;lastname;555-555-5555;help@desk.com"
+    role: teleport_auth_server
+    subnet: subnet-5afc9001
+    iam_profile: Admin_Full_Control
   tasks:
     - name: Launch instance
       ec2:
@@ -25,14 +29,19 @@
          group_id: "{{ sg }}"
          instance_type: "{{ instance_type }}"
          image: "{{ image }}"
+         instance_profile_name: "{{ iam_profile }}"
          wait: true
          region: "{{ region }}"
-         vpc_subnet_id: subnet-5afc9001
+         vpc_subnet_id: "{{ subnet }}"
          assign_public_ip: yes
          instance_tags:
              Backup: "{{ backup }}"
+             POC: "{{ poc }}"
+             Environment: "{{ env }}"
+             Role: "{{ role }}"
              Name: "{{ instance_name }}"
-             Application: "{{ app }}"      
+             Team: "{{ app }}"  
+             ec2startstop: "{{ start_stop }}"
       register: ec2
 
     - name: Add new instance to host group
@@ -57,9 +66,12 @@
   roles:
   - role: teleport 
     vars: 
+    - cluster: main
+    - token: hello
+    - table_name: teleport.state
     - teleport_config: |
           teleport:
-            nodename: "{{ node_name }}"
+            nodename: "{{ ansible_hostname }}"
             data_dir: /var/lib/teleport
             log:
               output: syslog
@@ -85,5 +97,4 @@
             enabled: no
           proxy_service:
             enabled: no
-  
-
+  - role: aws_ssm

@@ -1,0 +1,14 @@
+---
+- name: Install AWS SSM agent 
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - role: aws_ssm
+      vars:
+      - on_premise: false
+#      vars:
+#        - reg_code: "{{ lookup('env', 'REG_CODE') }}"
+#        - reg_id: "{{ lookup('env', 'REG_ID_ID') }}"
+#        - reg_region: us-east-1
+#        - on_premise: true

@@ -1,0 +1,18 @@
+---
+- name: Create Vyatta Users
+  hosts: vyatta
+  gather_facts: no
+  become: false
+  connection: local
+  vars:
+    users:
+     - { name: "user1", password: "changeme", fullname: "Test User 1", level: "operator", state: "present", updatepw: "on_create" }
+  tasks:
+  - name: Add Users
+    vyos_user:
+      name: "{{ item.name }}"
+      configured_password: "{{ item.password }}"
+      state: "{{ item.state }}"
+      level: "{{ item.level }}"
+      update_password: "{{ item.updatepw }}"
+    with_items: "{{ users }}"
