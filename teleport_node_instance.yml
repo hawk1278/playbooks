@@ -1,19 +1,24 @@
 ---
 - name: Create a Teleport SSH auth server instance
   hosts: localhost
+  connection: local
   gather_facts: False
   become: False
   vars:
-    key_name: 18sep2017
-    instance_type: m3.medium
-    sg: ["sg-0645c375","sg-232cac50","sg-8130b0f2","sg-c870f3bb"]
-    image: ami-4fffc834
+    key_name: 
+    instance_type: t2.micro
+    sg: 
+    image: 
     region: us-east-1
-    instance_name: proxy_test   
-    app: gopher
+    instance_name: 
+    app: nothing
     backup: true 
     auth_servers: ""
+    iam_profile: 
     node_name: "{{ ansible_hostname }}"
+    poc: someone
+    start_stop: 1
+    env: dev
 
   tasks:
     - name: Launch instance
@@ -24,12 +29,17 @@
          image: "{{ image }}"
          wait: true
          region: "{{ region }}"
-         vpc_subnet_id: subnet-5afc9001
+         vpc_subnet_id: 
          assign_public_ip: yes
+         instance_profile_name: "{{ iam_profile }}"
          instance_tags:
+             Application: "{{ app }}"   
              Backup: "{{ backup }}"
+             POC: "{{ poc }}"
+             Environment: "{{ env }}"
              Name: "{{ instance_name }}"
-             Application: "{{ app }}"      
+             Team: "{{ app }}"  
+             ec2startstop: "{{ start_stop }}"                
       register: ec2
 
     - name: Add new instance to host group
@@ -72,3 +82,19 @@
           enabled: "yes"
           listen_addr: 0.0.0.0:3022
           permit_user_env: false  
+
+- name: Register instance with AWS System Manager
+  hosts: launched
+  become: True
+  gather_facts: True
+  roles:
+  - role: aws_ssm
+
+- name: Announce new host deployment
+  hosts: rc01
+  roles:
+   - role: ansible_rc_alert
+     vars:
+     - instance_name: 
+     - region: 
+     - message: "Finished deploying {{ instance_name }}"          
