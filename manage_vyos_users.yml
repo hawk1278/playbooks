@@ -1,18 +1,27 @@
 ---
-- name: Create Vyatta Users
-  hosts: vyatta
+- hosts: vyatta1
   gather_facts: no
   become: false
   connection: local
-  vars:
-    users:
-     - { name: "user1", password: "changeme", fullname: "Test User 1", level: "operator", state: "present", updatepw: "on_create" }
+  vars_files: 
+  - vars/vyos_users.yml
   tasks:
-  - name: Add Users
+  - name: Add Vyatta users
     vyos_user:
       name: "{{ item.name }}"
-      configured_password: "{{ item.password }}"
+      configured_password: "{{ item.configured_password }}"
       state: "{{ item.state }}"
+      #full_name: "{{ item.fullname }}"
       level: "{{ item.level }}"
-      update_password: "{{ item.updatepw }}"
+#      update_password: "{{ item.update_password }}"
     with_items: "{{ users }}"
+  - name: Setup user SSH keys
+    vyos_config:
+      lines:
+        - set system login user "{{ item.name }}" authentication public-keys identifier key "{{ item.key }}"
+        - set system login user "{{ item.name }}" authentication public-keys identifier type ssh-rsa
+      save: yes
+    with_items: "{{ users }}"
+  - name: Backup config
+    vyos_config:
+      backup: yes
